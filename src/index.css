@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --background: 260 20% 4%;
+    --foreground: 260 10% 95%;
+
+    --card: 260 20% 7%;
+    --card-foreground: 260 10% 95%;
+
+    --popover: 260 20% 7%;
+    --popover-foreground: 260 10% 95%;
+
+    --primary: 265 90% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 265 100% 70%;
+
+    --secondary: 260 15% 12%;
+    --secondary-foreground: 260 10% 95%;
+
+    --muted: 260 15% 14%;
+    --muted-foreground: 260 10% 55%;
+
+    --accent: 265 50% 18%;
+    --accent-foreground: 260 10% 95%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 15% 14%;
+    --input: 260 15% 14%;
+    --ring: 265 90% 60%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 260 20% 5%;
+    --sidebar-foreground: 260 10% 90%;
+    --sidebar-primary: 265 90% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 15% 12%;
+    --sidebar-accent-foreground: 260 10% 90%;
+    --sidebar-border: 260 15% 14%;
+    --sidebar-ring: 265 90% 60%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(265 90% 60%), hsl(280 100% 45%));
+    --gradient-card: linear-gradient(180deg, hsl(260 20% 9%), hsl(260 20% 5%));
+    --gradient-glow: linear-gradient(135deg, hsl(265 90% 60% / 0.15), hsl(280 100% 50% / 0.05));
+    --shadow-glow: 0 0 30px hsl(265 90% 60% / 0.2);
+    --shadow-glow-strong: 0 0 50px hsl(265 90% 60% / 0.35);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  [dir="rtl"] {
+    font-family: 'Cairo', sans-serif;
+  }
+
+  [dir="ltr"] {
+    font-family: 'Rajdhani', sans-serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(260 20% 4%);
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(260 15% 18%);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(265 90% 60%);
+}
+
+/* Manhwa reader vertical scroll */
+.reader-vertical {
+  scroll-behavior: smooth;
+}
+.reader-vertical img {
+  width: 100%;
+  display: block;
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 20px hsl(265 90% 60% / 0.3), 0 0 60px hsl(265 90% 60% / 0.1);
+}
+.glow-text {
+  text-shadow: 0 0 20px hsl(265 90% 60% / 0.5);
+}
+.glass {
+  background: hsl(260 20% 7% / 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
