@@ -1,0 +1,14 @@
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "https://yibbovtecpbxlntfmvwd.supabase.co/functions/v1/sitemap"
+  status = 200
+
+[[redirects]]
+  from = "/rss.xml"
+  to = "https://yibbovtecpbxlntfmvwd.supabase.co/functions/v1/rss"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

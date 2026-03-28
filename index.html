@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>RealmScans - أفضل موقع مانهوا عربي</title>
+    <meta name="description" content="افضل موقع عربي للمانجا والمانهوا!">
+    <meta name="author" content="Lovable" />
+
+    <!-- TODO: Update og:title to match your application name -->
+    
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/Wk90g0krFfg0Jnulf7NIxygdV7w2/social-images/social-1773528467967-60887.webp">
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/Wk90g0krFfg0Jnulf7NIxygdV7w2/social-images/social-1773528467967-60887.webp">
+    
+  
+  
+  
+  <meta property="og:title" content="RealmScans - أفضل موقع مانهوا عربي">
+  <meta name="twitter:title" content="RealmScans - أفضل موقع مانهوا عربي">
+  <meta property="og:description" content="افضل موقع عربي للمانجا والمانهوا!">
+  <meta name="twitter:description" content="افضل موقع عربي للمانجا والمانهوا!">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8b5cf6">
+  <!-- OneSignal إشعارات -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "YOUR_ONESIGNAL_APP_ID", // ضع ID تطبيقك هنا
+        safari_web_id: "YOUR_SAFARI_WEB_ID",
+        notifyButton: { enable: true },
+      });
+    });
+  </script>
+</head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- تسجيل إضافة PWA Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(reg => console.log('PWA Registered'));
+        });
+      }
+    </script>
+  </body>
+</html>
