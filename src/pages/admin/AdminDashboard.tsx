@@ -94,7 +94,7 @@ const AdminDashboard = () => {
             <Shield className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
-            <p className="font-bold text-foreground text-sm">RealmScans</p>
+            <p className="font-bold text-foreground text-sm">Brown Manga</p>
             <p className="text-[10px] text-muted-foreground">Admin Panel</p>
           </div>
         </div>

@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SITE_URL = Deno.env.get("SITE_URL") || "https://realmscans.netlify.app";
+const SITE_URL = Deno.env.get("SITE_URL") || "https://brownmanga.site";
 
 const escapeXml = (value: string) =>
   String(value)
@@ -27,13 +27,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const { data: chapterRows, error } = await supabaseClient
+    const { data: chapterRows } = await supabaseClient
       .from("chapters")
       .select("id, chapter_number, created_at, manhwa:manhwa_id (title, slug)")
       .order("created_at", { ascending: false })
       .limit(20);
-      
-    if (error) throw error;
 
     const lastBuildDate = chapterRows?.[0] ? new Date(chapterRows[0].created_at).toUTCString() : new Date().toUTCString();
 
@@ -41,27 +39,26 @@ serve(async (req) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>RealmScans - أحدث الفصول</title>
-    <link>\${SITE_URL}</link>
+    <link>${SITE_URL}</link>
     <description>آخر تحديثات المانجا المرفوعة على RealmScans</description>
     <language>ar</language>
-    <lastBuildDate>\${lastBuildDate}</lastBuildDate>
-    <atom:link href="\${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />`;
+    <lastBuildDate>${lastBuildDate}</lastBuildDate>
+    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />`;
 
     chapterRows?.forEach((row: any) => {
-      // Handle Supabase returning array for joined tables in some versions
-      const m = Array.isArray(row.manhwa) ? row.manhwa[0] : row.manhwa;
+      const m = row.manhwa;
       if (m?.slug && row.chapter_number != null) {
-        const title = `\${m.title} - الفصل \${row.chapter_number}`;
-        const link = `\${SITE_URL}/manhwa/\${m.slug}/chapter/\${row.chapter_number}`;
+        const title = `${m.title} - الفصل ${row.chapter_number}`;
+        const link = `${SITE_URL}/manhwa/${m.slug}/chapter/${row.chapter_number}`;
         const pubDate = new Date(row.created_at).toUTCString();
         
         rssXml += `
     <item>
-      <title>\${escapeXml(title)}</title>
-      <link>\${escapeXml(link)}</link>
-      <guid isPermaLink="false">\${row.id}</guid>
-      <pubDate>\${pubDate}</pubDate>
-      <description>تم تحديث فصل جديد من مانهوا \${escapeXml(m.title)}</description>
+      <title>${escapeXml(title)}</title>
+      <link>${escapeXml(link)}</link>
+      <guid isPermaLink="false">${row.id}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <description>تم تحديث فصل جديد من مانهوا ${escapeXml(m.title)}</description>
     </item>`;
       }
     });

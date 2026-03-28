@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Footer = () => {
   const { t, lang } = useI18n();
-  const [siteName, setSiteName] = useState('RealmScans');
+  const [siteName, setSiteName] = useState('Brown Manga');
   const [siteLogo, setSiteLogo] = useState('');
 
   useEffect(() => {

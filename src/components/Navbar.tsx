@@ -30,7 +30,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [siteLogo, setSiteLogo] = useState('');
-  const [siteName, setSiteName] = useState('RealmScans');
+  const [siteName, setSiteName] = useState('Brown Manga');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

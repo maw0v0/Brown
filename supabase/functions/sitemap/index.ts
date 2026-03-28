@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SITE_URL = Deno.env.get("SITE_URL") || "https://realmscans.netlify.app";
+const SITE_URL = Deno.env.get("SITE_URL") || "https://brownmanga.site";
 
 const escapeXml = (value: string) =>
   String(value)
@@ -27,26 +27,22 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const { data: manhwaRows, error: manhwaError } = await supabaseClient
+    const { data: manhwaRows } = await supabaseClient
       .from("manhwa")
       .select("slug, updated_at, created_at");
-      
-    if (manhwaError) throw manhwaError;
 
-    const { data: chapterRows, error: chapterError } = await supabaseClient
+    const { data: chapterRows } = await supabaseClient
       .from("chapters")
       .select("chapter_number, created_at, manhwa (slug)")
       .order("created_at", { ascending: false })
       .limit(2000);
-      
-    if (chapterError) throw chapterError;
 
     const nowDate = new Date().toISOString().split("T")[0];
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>\${SITE_URL}/</loc>
-    <lastmod>\${nowDate}</lastmod>
+    <loc>${SITE_URL}/</loc>
+    <lastmod>${nowDate}</lastmod>
     <priority>1.0</priority>
   </url>`;
 
@@ -55,21 +51,20 @@ serve(async (req) => {
         const lastmod = (row.updated_at || row.created_at || nowDate).split("T")[0];
         xml += `
   <url>
-    <loc>\${SITE_URL}/manhwa/\${escapeXml(row.slug)}</loc>
-    <lastmod>\${lastmod}</lastmod>
+    <loc>${SITE_URL}/manhwa/${escapeXml(row.slug)}</loc>
+    <lastmod>${lastmod}</lastmod>
     <priority>0.8</priority>
   </url>`;
       }
     });
 
     chapterRows?.forEach((row: any) => {
-      const m = Array.isArray(row.manhwa) ? row.manhwa[0] : row.manhwa;
-      if (m?.slug && row.chapter_number != null) {
+      if (row.manhwa?.slug && row.chapter_number != null) {
         const lastmod = (row.created_at || nowDate).split("T")[0];
         xml += `
   <url>
-    <loc>\${SITE_URL}/manhwa/\${escapeXml(m.slug)}/chapter/\${row.chapter_number}</loc>
-    <lastmod>\${lastmod}</lastmod>
+    <loc>${SITE_URL}/manhwa/${escapeXml(row.manhwa.slug)}/chapter/${row.chapter_number}</loc>
+    <lastmod>${lastmod}</lastmod>
     <priority>0.6</priority>
   </url>`;
       }

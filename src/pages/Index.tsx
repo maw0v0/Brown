@@ -150,7 +150,7 @@ const Index = () => {
               ) : (
                 <>
                   <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-3 font-orbitron">
-                    Realm<span className="text-primary glow-text">Scans</span>
+                    Brown<span className="text-primary glow-text">Manga</span>
                   </h1>
                   <p className="text-muted-foreground text-lg mb-5">
                     {lang === 'ar' ? 'أفضل موقع عربي للمانجا والمانهوا!' : 'The best Arabic manga & manhwa site!'}
@@ -167,12 +167,12 @@ const Index = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="flex items-center justify-between p-4 rounded-xl bg-card/50 border border-border/30">
             <div>
-              <p className="font-bold text-foreground text-sm">{lang === 'ar' ? 'شارك RealmScans' : 'Share RealmScans'}</p>
+              <p className="font-bold text-foreground text-sm">{lang === 'ar' ? 'شارك Brown Manga' : 'Share Brown Manga'}</p>
               <p className="text-xs text-muted-foreground">{lang === 'ar' ? 'مع أصدقائك' : 'to your friends'}</p>
             </div>
             <Button size="sm" variant="outline" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
               if (navigator.share) {
-                navigator.share({ title: 'RealmScans', url: window.location.href });
+                navigator.share({ title: 'Brown Manga', url: window.location.href });
               } else {
                 navigator.clipboard.writeText(window.location.href);
                 toast.success(lang === 'ar' ? 'تم نسخ الرابط' : 'Link copied');
