@@ -13,5 +13,5 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://realmscans.netlify.app/sitemap.xml
-Sitemap: https://realmscans.netlify.app/rss.xml
+Sitemap: https://brownmanga.site/sitemap.xml
+Sitemap: https://brownmanga.site/rss.xml
