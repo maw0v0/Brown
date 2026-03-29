@@ -46,8 +46,12 @@ const ChapterReader = () => {
       setChapter(ch);
 
       // Increment views securely via RPC
-      (supabase.rpc as any)('increment_chapter_view', { p_chapter_id: ch.id }).then(() => {});
-
+     const viewedKey = `viewed_chapter_${ch.id}`;
+      if (!localStorage.getItem(viewedKey)) {
+        (supabase.rpc as any)('increment_chapter_view', { p_chapter_id: ch.id }).then(() => {
+          localStorage.setItem(viewedKey, 'true');
+        });
+      }
       const [prevRes, nextRes, commentsRes] = await Promise.all([
         supabase.from('chapters').select('chapter_number').eq('manhwa_id', m.id).lt('chapter_number', ch.chapter_number).order('chapter_number', { ascending: false }).limit(1),
         supabase.from('chapters').select('chapter_number').eq('manhwa_id', m.id).gt('chapter_number', ch.chapter_number).order('chapter_number').limit(1),
