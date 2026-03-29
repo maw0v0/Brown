@@ -42,16 +42,15 @@
   </script>
 </head>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- تسجيل إضافة PWA Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(reg => console.log('PWA Registered'));
-        });
-      }
-    </script>
-  </body>
+  <body style="background-color: #5C4033;">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => console.log('PWA Registered'));
+      });
+    }
+  </script>
+</body>
 </html>
