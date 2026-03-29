@@ -110,7 +110,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-0 -me-2">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary w-9 h-9" asChild>
-              <a href="https://discord.gg/" target="_blank" rel="noopener noreferrer">
+              <a href="https://discord.gg/qFGmWUZ7w5" target="_blank" rel="noopener noreferrer">
                 <DiscordIcon />
               </a>
             </Button>
