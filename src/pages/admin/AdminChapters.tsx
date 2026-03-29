@@ -118,25 +118,8 @@ const AdminChapters = () => {
           const ext = file.name.split('.').pop();
           const path = `chapters/${currentChapterId}/page-${startNum + i}.${ext}`;
 
-          let uploadFile: File | Blob = file;
-          if (file.size > 500 * 1024 && file.type.startsWith('image/')) {
-            try {
-              const bitmap = await createImageBitmap(file);
-              const canvas = document.createElement('canvas');
-              const maxDim = 1600;
-              let w = bitmap.width, h = bitmap.height;
-              if (w > maxDim || h > maxDim) {
-                const ratio = Math.min(maxDim / w, maxDim / h);
-                w = Math.round(w * ratio);
-                h = Math.round(h * ratio);
-              }
-              canvas.width = w;
-              canvas.height = h;
-              const ctx = canvas.getContext('2d')!;
-              ctx.drawImage(bitmap, 0, 0, w, h);
-              uploadFile = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/webp', 0.82));
-            } catch { /* use original */ }
-          }
+          // [تعديل قيس]: تم إلغاء كود الضغط والتصغير لرفع الجودة الأصلية
+          let uploadFile: File = file;
 
           const { error } = await supabase.storage.from('avatars').upload(path, uploadFile, { upsert: true });
           if (error) { toast.error(`${file.name}: ${error.message}`); continue; }
@@ -202,25 +185,8 @@ const AdminChapters = () => {
       const ext = file.name.split('.').pop();
       const path = `chapters/${selectedChapter.id}/page-${startNum + i}.${ext}`;
 
-      let uploadFile: File | Blob = file;
-      if (file.size > 500 * 1024 && file.type.startsWith('image/')) {
-        try {
-          const bitmap = await createImageBitmap(file);
-          const canvas = document.createElement('canvas');
-          const maxDim = 1600;
-          let w = bitmap.width, h = bitmap.height;
-          if (w > maxDim || h > maxDim) {
-            const ratio = Math.min(maxDim / w, maxDim / h);
-            w = Math.round(w * ratio);
-            h = Math.round(h * ratio);
-          }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d')!;
-          ctx.drawImage(bitmap, 0, 0, w, h);
-          uploadFile = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/webp', 0.82));
-        } catch { /* use original */ }
-      }
+      // [تعديل قيس]: تم إلغاء كود الضغط والتصغير لرفع الجودة الأصلية
+      let uploadFile: File = file;
 
       const { error } = await supabase.storage.from('avatars').upload(path, uploadFile, { upsert: true });
       if (error) { toast.error(`${file.name}: ${error.message}`); continue; }
@@ -277,7 +243,6 @@ const AdminChapters = () => {
         {chapters.length === 0 && <div className="text-center py-12 text-muted-foreground">{t('noResults')}</div>}
       </div>
 
-      {/* Chapter Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-card border-border/50">
           <DialogHeader><DialogTitle className="font-cairo">{editing ? (lang === 'ar' ? 'تعديل الفصل' : 'Edit Chapter') : t('publishChapter')}</DialogTitle></DialogHeader>
@@ -312,7 +277,7 @@ const AdminChapters = () => {
                 <div className="border-2 border-dashed border-border/50 rounded-xl p-4 text-center hover:border-primary/30 transition-colors">
                   <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-foreground font-medium mb-1">{lang === 'ar' ? 'رفع صور الصفحات' : 'Upload Page Images'}</p>
-                  <p className="text-xs text-muted-foreground mb-3">{lang === 'ar' ? 'يتم ضغط الصور تلقائياً' : 'Images are auto-compressed'}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{lang === 'ar' ? 'الجودة أصبحت الآن أصلية 100%' : 'Quality is now 100% original'}</p>
                   <Button variant="outline" size="sm" onClick={() => chapterFileInputRef.current?.click()} disabled={uploading} className="gap-2">
                     <Upload className="w-4 h-4" /> {lang === 'ar' ? 'اختر صور' : 'Select Images'}
                   </Button>
@@ -348,7 +313,6 @@ const AdminChapters = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Pages Dialog */}
       <Dialog open={pagesDialog} onOpenChange={setPagesDialog}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto bg-card border-border/50">
           <DialogHeader><DialogTitle className="font-cairo">Ch. {selectedChapter?.chapter_number} - Pages ({pages.length})</DialogTitle></DialogHeader>
@@ -365,7 +329,7 @@ const AdminChapters = () => {
             <div className="border-2 border-dashed border-border/50 rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
               <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-foreground font-medium mb-1">{lang === 'ar' ? 'رفع صور الصفحات' : 'Upload Page Images'}</p>
-              <p className="text-xs text-muted-foreground mb-3">{lang === 'ar' ? 'يتم ضغط الصور تلقائياً' : 'Images are auto-compressed'}</p>
+              <p className="text-xs text-muted-foreground mb-3">{lang === 'ar' ? 'الجودة أصبحت الآن أصلية 100%' : 'Quality is now 100% original'}</p>
               <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
                 <Upload className="w-4 h-4" /> {lang === 'ar' ? 'اختر صور' : 'Select Images'}
               </Button>
