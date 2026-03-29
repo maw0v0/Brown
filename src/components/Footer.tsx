@@ -63,11 +63,20 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-foreground mb-4">{lang === 'ar' ? 'المجتمع' : 'Community'}</h4>
             <div className="flex gap-3">
-              {['Discord', 'Twitter', 'Telegram'].map(name => (
-                <a key={name} href="#" className="w-9 h-9 rounded-lg bg-secondary hover:bg-primary/15 flex items-center justify-center text-muted-foreground hover:text-primary transition-all text-sm font-medium">
-                  {name[0]}
-                </a>
-              ))}
+              {/* زر ديسكورد */}
+              <a href="https://discord.gg/qFGmWUZ7w5" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-secondary hover:bg-primary/15 flex items-center justify-center text-muted-foreground hover:text-primary transition-all text-sm font-medium">
+                D
+              </a>
+
+              {/* زر تيك توك */}
+              <a href="https://www.tiktok.com/@brown.manga0" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-secondary hover:bg-primary/15 flex items-center justify-center text-muted-foreground hover:text-primary transition-all text-sm font-medium">
+                TK
+              </a>
+
+              {/* زر تيليجرام */}
+              <a href="https://t.me/brownmanga" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-secondary hover:bg-primary/15 flex items-center justify-center text-muted-foreground hover:text-primary transition-all text-sm font-medium">
+                TG
+              </a>
             </div>
           </div>
         </div>
