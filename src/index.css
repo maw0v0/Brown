@@ -3,53 +3,56 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
-    --background: 260 20% 4%;
-    --foreground: 260 10% 95%;
+    /* خلفية فخمة تميل للأسود الدافئ */
+    --background: 20 15% 5%;
+    --foreground: 20 10% 95%;
 
-    --card: 260 20% 7%;
-    --card-foreground: 260 10% 95%;
+    --card: 20 15% 8%;
+    --card-foreground: 20 10% 95%;
 
-    --popover: 260 20% 7%;
-    --popover-foreground: 260 10% 95%;
+    --popover: 20 15% 8%;
+    --popover-foreground: 20 10% 95%;
 
-    --primary: 265 90% 60%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 265 100% 70%;
+    /* اللون البني الأساسي للموقع */
+    --primary: 21 47% 72%;
+    --primary-foreground: 20 15% 5%;
+    --primary-glow: 21 47% 80%;
 
-    --secondary: 260 15% 12%;
-    --secondary-foreground: 260 10% 95%;
+    --secondary: 20 15% 12%;
+    --secondary-foreground: 20 10% 95%;
 
-    --muted: 260 15% 14%;
-    --muted-foreground: 260 10% 55%;
+    --muted: 20 15% 15%;
+    --muted-foreground: 20 10% 60%;
 
-    --accent: 265 50% 18%;
-    --accent-foreground: 260 10% 95%;
+    --accent: 21 47% 20%;
+    --accent-foreground: 20 10% 95%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 15% 14%;
-    --input: 260 15% 14%;
-    --ring: 265 90% 60%;
+    --border: 20 15% 15%;
+    --input: 20 15% 15%;
+    --ring: 21 47% 72%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 260 20% 5%;
-    --sidebar-foreground: 260 10% 90%;
-    --sidebar-primary: 265 90% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 15% 12%;
-    --sidebar-accent-foreground: 260 10% 90%;
-    --sidebar-border: 260 15% 14%;
-    --sidebar-ring: 265 90% 60%;
+    --sidebar-background: 20 15% 5%;
+    --sidebar-foreground: 20 10% 90%;
+    --sidebar-primary: 21 47% 72%;
+    --sidebar-primary-foreground: 20 15% 5%;
+    --sidebar-accent: 20 15% 12%;
+    --sidebar-accent-foreground: 20 10% 90%;
+    --sidebar-border: 20 15% 15%;
+    --sidebar-ring: 21 47% 72%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(265 90% 60%), hsl(280 100% 45%));
-    --gradient-card: linear-gradient(180deg, hsl(260 20% 9%), hsl(260 20% 5%));
-    --gradient-glow: linear-gradient(135deg, hsl(265 90% 60% / 0.15), hsl(280 100% 50% / 0.05));
-    --shadow-glow: 0 0 30px hsl(265 90% 60% / 0.2);
-    --shadow-glow-strong: 0 0 50px hsl(265 90% 60% / 0.35);
+    --gradient-primary: linear-gradient(135deg, hsl(21 47% 72%), hsl(21 50% 50%));
+    --gradient-card: linear-gradient(180deg, hsl(20 15% 10%), hsl(20 15% 6%));
+    --gradient-glow: linear-gradient(135deg, hsl(21 47% 72% / 0.15), hsl(21 50% 50% / 0.05));
+    --shadow-glow: 0 0 30px hsl(21 47% 72% / 0.2);
+    --shadow-glow-strong: 0 0 50px hsl(21 47% 72% / 0.35);
   }
 }
 
@@ -76,14 +79,14 @@
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(260 20% 4%);
+  background: hsl(20 15% 5%);
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(260 15% 18%);
+  background: hsl(20 15% 20%);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(265 90% 60%);
+  background: hsl(21 47% 72%); /* لون شريط التمرير صار بني */
 }
 
 /* Manhwa reader vertical scroll */
@@ -97,13 +100,14 @@
 
 /* Glow effects */
 .glow-purple {
-  box-shadow: 0 0 20px hsl(265 90% 60% / 0.3), 0 0 60px hsl(265 90% 60% / 0.1);
+  /* خلينا الاسم بس غيرنا اللون ليتبع البني الأساسي */
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 60px hsl(var(--primary) / 0.1);
 }
 .glow-text {
-  text-shadow: 0 0 20px hsl(265 90% 60% / 0.5);
+  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
 }
 .glass {
-  background: hsl(260 20% 7% / 0.7);
+  background: hsl(20 15% 8% / 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
