@@ -87,6 +87,7 @@ const Navbar = () => {
     { to: '/teams', label: t('teams'), icon: <Users className="w-4 h-4" /> },
   ];
 
+  // تحليل اسم الموقع لإضافة تدرج لوني (كما في التصميم الجديد)
   const nameMatch = siteName.match(/^(\w+)(.*)/);
   const namePart1 = nameMatch ? nameMatch[1] : siteName;
   const namePart2 = nameMatch ? nameMatch[2] : '';
@@ -95,22 +96,30 @@ const Navbar = () => {
     <>
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-14 items-center justify-between gap-2 px-4">
-          <Link to="/" className="flex items-center gap-2 shrink-0 group">
+          
+          {/* تعديل هيكل اللوجو ليتطابق مع التصميم الحديث (image_3.png) */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
             {siteLogo ? (
-              <img src={siteLogo} alt={siteName} className="w-8 h-8 rounded-lg object-contain" />
+              <img src={siteLogo} alt={siteName} className="w-8 h-8 rounded-full object-contain" />
             ) : (
-              // تم حذف glow-purple واستبداله بـ shadow-glow الذي يتبع لونك الأساسي
-              <div className="w-8 h-8 rounded-lg bg-primary shadow-glow flex items-center justify-center">
-                <span className="text-primary-foreground font-orbitron font-bold text-sm">{siteName[0]}</span>
+              // تم استبدال المربع البنفسجي بدائرة Lunex البيضاء
+              <div className="w-9 h-9 flex items-center justify-center transition-transform group-hover:scale-105">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-foreground">
+                    <path d="M12 2L1 21h22L12 2zm0 3.3L19.2 19H4.8L12 5.3z"/>
+                </svg>
               </div>
             )}
-            <span className="font-orbitron font-bold text-foreground hidden sm:block tracking-wider text-sm">
-              {namePart1}<span className="text-primary">{namePart2}</span>
+            <span className="font-orbitron font-bold hidden sm:block tracking-wider text-sm">
+              <span className="text-foreground">{namePart1}</span>
+              <span className="text-primary">{namePart2}</span>
             </span>
           </Link>
 
-          <div className="flex items-center gap-0 -me-2">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary w-9 h-9" asChild>
+          {/* تعديل لون خلفية الأزرار لتتبع اللون primary الجديد (البني) */}
+          <div className="flex items-center gap-0.5 -me-2">
+            
+            {/* جعل الأيقونة (ديسكورد وبحث وإشعارات) بستايل دائري هادئ */}
+            <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" asChild>
               <a href="https://discord.gg/qFGmWUZ7w5" target="_blank" rel="noopener noreferrer">
                 <DiscordIcon />
               </a>
@@ -119,10 +128,10 @@ const Navbar = () => {
             {user && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary relative w-9 h-9">
+                  <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors relative">
                     <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                      <span className="absolute top-2 right-2 w-3.5 h-3.5 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
@@ -132,7 +141,7 @@ const Navbar = () => {
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
                     <h3 className="font-bold text-foreground text-sm">{lang === 'ar' ? 'الإشعارات' : 'Notifications'}</h3>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={fetchNotifications} className="w-7 h-7 text-muted-foreground hover:text-primary">
+                      <Button variant="ghost" size="icon" onClick={fetchNotifications} className="w-7 h-7 rounded-full text-muted-foreground hover:text-primary">
                         <RefreshCw className="w-3.5 h-3.5" />
                       </Button>
                       {unreadCount > 0 && (
@@ -174,17 +183,19 @@ const Navbar = () => {
               </Popover>
             )}
 
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary w-9 h-9" onClick={() => setSearchOpen(!searchOpen)}>
+            <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={() => setSearchOpen(!searchOpen)}>
               {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
             </Button>
 
+            {/* تعديل لون خلفية دائرة المستخدم لتتبع اللون primary الجديد (البني) */}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="rounded-full outline-none focus:ring-2 focus:ring-primary/50 ms-0.5 p-0 shrink-0">
-                    <Avatar className="w-8 h-8 border-2 border-primary/30 hover:border-primary/60 transition-colors">
+                    <Avatar className="w-9 h-9 border border-border/50 hover:border-primary/50 transition-colors">
                       <AvatarImage src={profile?.avatar_url || ''} />
-                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+                      {/* تعديل: لون الخلفية صار بني/بيجي (bg-primary/20) والحرف بني (text-primary) */}
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold uppercase">
                         {(profile?.username || user.email || '?')[0].toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -193,9 +204,9 @@ const Navbar = () => {
                 <DropdownMenuContent align={dir === 'rtl' ? 'start' : 'end'} className="w-64 bg-card border-border/50 p-0">
                   <div className="px-4 py-3 border-b border-border/30">
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10 border border-primary/20">
+                      <Avatar className="w-11 h-11 border border-border/50">
                         <AvatarImage src={profile?.avatar_url || ''} />
-                        <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                        <AvatarFallback className="bg-primary/20 text-primary font-bold uppercase">
                           {(profile?.username || '?')[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -233,7 +244,6 @@ const Navbar = () => {
                   )}
                   <DropdownMenuSeparator className="bg-border/30" />
                   <div className="py-1">
-                    {/* تعديل: جعل رابط المساعدة يفتح الديسكورد مباشرة */}
                     <DropdownMenuItem onClick={() => window.open('https://discord.gg/qFGmWUZ7w5', '_blank')} className="gap-2 px-4">
                       <HelpCircle className="w-4 h-4" /> {lang === 'ar' ? 'مساعدة ودعم' : 'Help & Support'}
                     </DropdownMenuItem>
@@ -246,17 +256,17 @@ const Navbar = () => {
               </DropdownMenu>
             ) : (
               <Link to="/login" className="ms-1">
-                {/* تم حذف glow-purple هنا أيضاً */}
-                <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-glow text-xs h-8 px-3">{t('login')}</Button>
+                {/* تم تعديل لون خلفية الزر لتتبع اللون primary الجديد */}
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8.5 px-3.5 rounded-full">{t('login')}</Button>
               </Link>
             )}
 
-            <Button variant="ghost" size="icon" className="w-9 h-9 p-0 ms-0.5" onClick={() => setMenuOpen(!menuOpen)}>
+            <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
 
-            <Button variant="ghost" size="icon" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} className="text-muted-foreground hover:text-primary hidden md:flex w-9 h-9">
-              <Globe className="w-4 h-4" />
+            <Button variant="ghost" size="icon" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} className="text-muted-foreground hover:text-primary transition-colors hidden md:flex w-10 h-10 rounded-full">
+              <Globe className="w-4.5 h-4.5" />
             </Button>
           </div>
         </div>
@@ -272,7 +282,7 @@ const Navbar = () => {
                   placeholder={t('search')}
                   className="bg-secondary/50 border-border/50 focus:border-primary/50"
                 />
-                <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 shrink-0">
+                <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 rounded-xl">
                   <Search className="w-4 h-4" />
                 </Button>
               </form>
@@ -281,9 +291,9 @@ const Navbar = () => {
         )}
 
         {menuOpen && (
-          <div className="border-t border-border/30 bg-background/95 backdrop-blur-xl">
+          <div className="border-t border-border/30 bg-background/95 backdrop-blur-xl md:hidden">
             <div className="container py-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {navLinks.map(link => (
                   <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}>
                     <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-card/50 hover:bg-primary/10 border border-border/30 hover:border-primary/30 text-muted-foreground hover:text-primary transition-all text-sm">
@@ -293,7 +303,7 @@ const Navbar = () => {
                 ))}
               </div>
               <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/20">
-                <button onClick={() => { setLang(lang === 'ar' ? 'en' : 'ar'); setMenuOpen(false); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors text-sm md:hidden">
+                <button onClick={() => { setLang(lang === 'ar' ? 'en' : 'ar'); setMenuOpen(false); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors text-sm">
                   <Globe className="w-4 h-4" /> {lang === 'ar' ? 'English' : 'العربية'}
                 </button>
               </div>
