@@ -99,7 +99,8 @@ const Navbar = () => {
             {siteLogo ? (
               <img src={siteLogo} alt={siteName} className="w-8 h-8 rounded-lg object-contain" />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-primary glow-purple flex items-center justify-center">
+              // تم حذف glow-purple واستبداله بـ shadow-glow الذي يتبع لونك الأساسي
+              <div className="w-8 h-8 rounded-lg bg-primary shadow-glow flex items-center justify-center">
                 <span className="text-primary-foreground font-orbitron font-bold text-sm">{siteName[0]}</span>
               </div>
             )}
@@ -232,7 +233,10 @@ const Navbar = () => {
                   )}
                   <DropdownMenuSeparator className="bg-border/30" />
                   <div className="py-1">
-                    <DropdownMenuItem onClick={() => navigate('/settings')} className="gap-2 px-4"><HelpCircle className="w-4 h-4" /> {lang === 'ar' ? 'مساعدة ودعم' : 'Help & Support'}</DropdownMenuItem>
+                    {/* تعديل: جعل رابط المساعدة يفتح الديسكورد مباشرة */}
+                    <DropdownMenuItem onClick={() => window.open('https://discord.gg/qFGmWUZ7w5', '_blank')} className="gap-2 px-4">
+                      <HelpCircle className="w-4 h-4" /> {lang === 'ar' ? 'مساعدة ودعم' : 'Help & Support'}
+                    </DropdownMenuItem>
                   </div>
                   <DropdownMenuSeparator className="bg-border/30" />
                   <div className="py-1 pb-2">
@@ -242,7 +246,8 @@ const Navbar = () => {
               </DropdownMenu>
             ) : (
               <Link to="/login" className="ms-1">
-                <Button size="sm" className="bg-primary hover:bg-primary/90 glow-purple text-xs h-8 px-3">{t('login')}</Button>
+                {/* تم حذف glow-purple هنا أيضاً */}
+                <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-glow text-xs h-8 px-3">{t('login')}</Button>
               </Link>
             )}
 
