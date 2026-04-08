@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, Edit2, Image, Upload, Eye, FileArchive, Loader2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
@@ -24,13 +23,15 @@ const AdminChapters = () => {
   const [pages, setPages] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const chapterFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   // حالات الحذف
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [chapterToDelete, setChapterToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // حالة جلب الصور
+  const [loadingPages, setLoadingPages] = useState(false);
 
   const MAX_SLICE_HEIGHT = 2500;
 
@@ -43,6 +44,21 @@ const AdminChapters = () => {
   };
 
   useEffect(() => { fetchChapters(); }, [manhwaId]);
+
+  // جلب الصور عند فتح نافذة العرض
+  useEffect(() => {
+    const fetchChapterPages = async () => {
+      if (pagesDialog && selectedChapter) {
+        setLoadingPages(true);
+        const { data } = await supabase.from('chapter_pages').select('*').eq('chapter_id', selectedChapter.id).order('page_number');
+        setPages(data || []);
+        setLoadingPages(false);
+      } else {
+        setPages([]);
+      }
+    };
+    fetchChapterPages();
+  }, [pagesDialog, selectedChapter]);
 
   const processFiles = async (files: File[]): Promise<File[]> => {
     let allImages: { name: string; file: File | Blob }[] = [];
@@ -63,7 +79,6 @@ const AdminChapters = () => {
     }
 
     allImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-    
     return allImages.map(item => item.file as File);
   };
 
@@ -201,6 +216,7 @@ const AdminChapters = () => {
               {ch.is_locked && <Lock className="w-4 h-4 text-primary" />}
             </div>
             <div className="flex gap-2">
+              {/* هذا الزر تم تفعيله الآن ليفتح نافذة عرض الصور */}
               <Button variant="ghost" size="icon" onClick={() => { setSelectedChapter(ch); setPagesDialog(true); }}><Image className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => { 
                 setEditing(ch); 
@@ -220,6 +236,7 @@ const AdminChapters = () => {
         ))}
       </div>
 
+      {/* نافذة التأكيد على الحذف */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px] bg-card">
           <DialogHeader>
@@ -238,6 +255,35 @@ const AdminChapters = () => {
         </DialogContent>
       </Dialog>
 
+      {/* النافذة الجديدة لعرض صور الفصل */}
+      <Dialog open={pagesDialog} onOpenChange={setPagesDialog}>
+        <DialogContent className="max-w-4xl bg-card border-border/50 max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>صور الفصل {selectedChapter?.chapter_number}</DialogTitle>
+          </DialogHeader>
+          
+          {loadingPages ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : pages.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">لا توجد صور في هذا الفصل.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+              {pages.map((p) => (
+                <div key={p.id} className="relative group rounded-xl overflow-hidden border border-border/50 bg-secondary/20">
+                  <img src={p.image_url} alt={`صفحة ${p.page_number}`} className="w-full h-48 object-cover" loading="lazy" />
+                  <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-foreground px-2.5 py-0.5 rounded-md text-xs font-bold border border-border/50">
+                    {p.page_number}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* نافذة الرفع وتعديل الفصل */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-xl bg-card border-border/50">
           <DialogHeader><DialogTitle>{editing ? 'تعديل الفصل' : 'نشر فصل (دعم ZIP + ترتيب تلقائي)'}</DialogTitle></DialogHeader>
@@ -247,7 +293,6 @@ const AdminChapters = () => {
               <div><Label>العنوان (اختياري)</Label><Input value={form.title_ar} onChange={e => setForm({...form, title_ar: e.target.value})} className="bg-secondary/50 mt-1" /></div>
             </div>
 
-            {/* قسم القفل والإعدادات المدفوعة */}
             <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border border-border/50">
               <div className="space-y-0.5">
                 <Label className="text-base flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> قفل الفصل (مدفوع)</Label>
