@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
@@ -8,75 +8,35 @@ import { ChevronLeft, ChevronRight, Home, BookOpen, Columns, Rows3, Lock, Messag
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import AdBanner from '@/components/AdBanner';
-import { useInView } from 'react-intersection-observer';
-
-const LazyImage = ({ src, alt, onLoad }: { src: string; alt: string; onLoad?: () => void }) => {
-  const { ref, inView } = useInView({ triggerOnce: true, rootMargin: '400px 0px' });
-  return (
-    <div ref={ref} className="w-full min-h-[300px] flex items-center justify-center bg-secondary/10">
-      {inView ? (
-        <img src={src} alt={alt} className="w-full h-auto object-contain" loading="lazy" onLoad={onLoad} />
-      ) : (
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      )}
-    </div>
-  );
-};
 
 const ChapterReader = () => {
   const { slug, chapterNum } = useParams();
   const { t, lang } = useI18n();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [manhwa, setManhwa] = useState<any>(null);
   const [chapter, setChapter] = useState<any>(null);
   const [pages, setPages] = useState<any[]>([]);
   const [prevChapter, setPrevChapter] = useState<any>(null);
   const [nextChapter, setNextChapter] = useState<any>(null);
-  
-  // استرجاع وضع القراءة المفضل من الذاكرة أو تعيينه للعمودي
-  const [viewMode, setViewMode] = useState<'vertical' | 'page'>(() => {
-    return (localStorage.getItem('preferred_view_mode') as 'vertical' | 'page') || 'vertical';
-  });
-  
+  const [viewMode, setViewMode] = useState<'vertical' | 'page'>('vertical');
   const [currentPage, setCurrentPage] = useState(0);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState('');
   const [userRating, setUserRating] = useState(0);
-  const [isModerator, setIsModerator] = useState(false);
-  
-  const readerRef = useRef<HTMLDivElement>(null);
-  const [imagesLoadedCount, setImagesLoadedCount] = useState(0);
-
-  // مفاتيح الذاكرة المحلية
-  const getScrollKey = (chId: string) => `scroll_pos_${chId}`;
-  const getPageKey = (chId: string) => `page_pos_${chId}`;
 
   const fetchPages = async (chapterId: string) => {
     const { data } = await supabase.from('chapter_pages').select('*').eq('chapter_id', chapterId).order('page_number');
     setPages(data || []);
-    
-    // استرجاع رقم الصفحة المحفوظ إذا كنا في وضع الصفحات
-    const savedPage = localStorage.getItem(getPageKey(chapterId));
-    if (savedPage) {
-      setCurrentPage(Number(savedPage));
-    } else {
-      setCurrentPage(0);
-    }
+    setCurrentPage(0);
   };
 
   useEffect(() => {
     if (!slug || !chapterNum) return;
     const fetchChapter = async () => {
       setLoading(true);
-
-      if (user) {
-        const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-        if (roleData?.role === 'moderator') setIsModerator(true);
-      }
-
       const { data: m } = await supabase.from('manhwa').select('*').eq('slug', slug).single();
       if (!m) { setLoading(false); return; }
       setManhwa(m);
@@ -85,13 +45,9 @@ const ChapterReader = () => {
       if (!ch) { setLoading(false); return; }
       setChapter(ch);
 
-      const viewedKey = `viewed_chapter_${ch.id}`;
-      if (!localStorage.getItem(viewedKey)) {
-        (supabase.rpc as any)('increment_chapter_view', { p_chapter_id: ch.id }).then(() => {
-          localStorage.setItem(viewedKey, 'true');
-        });
-      }
-      
+      // Increment views securely via RPC
+      (supabase.rpc as any)('increment_chapter_view', { p_chapter_id: ch.id }).then(() => {});
+
       const [prevRes, nextRes, commentsRes] = await Promise.all([
         supabase.from('chapters').select('chapter_number').eq('manhwa_id', m.id).lt('chapter_number', ch.chapter_number).order('chapter_number', { ascending: false }).limit(1),
         supabase.from('chapters').select('chapter_number').eq('manhwa_id', m.id).gt('chapter_number', ch.chapter_number).order('chapter_number').limit(1),
@@ -102,12 +58,11 @@ const ChapterReader = () => {
       setNextChapter(nextRes.data?.[0] || null);
       if (commentsRes.data) setComments(commentsRes.data);
 
+      // Check time-based unlock
       let effectivelyLocked = ch.is_locked;
-      if (isAdmin || isModerator) {
-         effectivelyLocked = false;
-      } else if (ch.is_locked && ch.lock_duration_days > 0 && ch.published_at) {
-         const unlockDate = new Date(new Date(ch.published_at).getTime() + ch.lock_duration_days * 86400000);
-         if (new Date() > unlockDate) effectivelyLocked = false;
+      if (ch.is_locked && ch.lock_duration_days > 0 && ch.published_at) {
+        const unlockDate = new Date(new Date(ch.published_at).getTime() + ch.lock_duration_days * 86400000);
+        if (new Date() > unlockDate) effectivelyLocked = false;
       }
 
       let allowed = !effectivelyLocked;
@@ -128,12 +83,18 @@ const ChapterReader = () => {
         setPages([]);
       }
 
+      if (!allowed) {
+        // Just let them view the unlock screen
+        setPages([]);
+        setIsUnlocked(false);
+      }
+
       if (user) {
         const { data: ur } = await supabase.from('ratings').select('score').eq('chapter_id', ch.id).eq('user_id', user.id).maybeSingle();
         if (ur) setUserRating(ur.score);
       }
 
-      // حفظ سجل القراءة بطريقة آمنة 100%
+      // --- إصلاح تسجيل القراءة ليعمل قسم "أكمل القراءة" بشكل صحيح ---
       if (user && allowed) {
         const { data: existingHistory } = await supabase.from('reading_history')
           .select('id')
@@ -150,62 +111,12 @@ const ChapterReader = () => {
             .insert({ user_id: user.id, chapter_id: ch.id, read_at: new Date().toISOString() });
         }
       }
+      // -------------------------------------------------------------
+
       setLoading(false);
     };
     fetchChapter();
-  }, [slug, chapterNum, user, isAdmin, isModerator]);
-
-  // حفظ التمرير (Scroll) تلقائياً أثناء القراءة
-  useEffect(() => {
-    if (viewMode !== 'vertical' || !chapter || !isUnlocked) return;
-
-    let timeoutId: NodeJS.Timeout;
-    const handleScroll = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        // نحفظ المكان كل نصف ثانية من توقف النزول
-        const scrollPosition = window.scrollY;
-        if (scrollPosition > 100) { // نحفظ فقط إذا نزل عن بداية الصفحة
-            localStorage.setItem(getScrollKey(chapter.id), scrollPosition.toString());
-        }
-      }, 500);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(timeoutId);
-    };
-  }, [viewMode, chapter, isUnlocked]);
-
-  // الاسترجاع التلقائي لمكان القراءة (Auto-scroll) عند تحميل الصور الأولى
-  useEffect(() => {
-    if (viewMode === 'vertical' && chapter && imagesLoadedCount > 0 && imagesLoadedCount <= 2) {
-      const savedScroll = localStorage.getItem(getScrollKey(chapter.id));
-      if (savedScroll) {
-        setTimeout(() => {
-            window.scrollTo({
-                top: Number(savedScroll),
-                behavior: 'smooth'
-            });
-        }, 500); // نعطي المتصفح نصف ثانية لترتيب الصور قبل النزول
-      }
-    }
-  }, [imagesLoadedCount, viewMode, chapter]);
-
-  // حفظ وضع القراءة وتغيير الصفحة
-  const handleViewModeChange = () => {
-    const newMode = viewMode === 'vertical' ? 'page' : 'vertical';
-    setViewMode(newMode);
-    localStorage.setItem('preferred_view_mode', newMode);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    if (chapter) {
-        localStorage.setItem(getPageKey(chapter.id), newPage.toString());
-    }
-  };
+  }, [slug, chapterNum, user]);
 
   const handleUnlock = async () => {
     if (!user || !chapter) return;
@@ -220,10 +131,24 @@ const ChapterReader = () => {
 
       setIsUnlocked(true);
       await fetchPages(chapter.id);
-      await supabase.from('reading_history').upsert(
-        { user_id: user.id, chapter_id: chapter.id, read_at: new Date().toISOString() },
-        { onConflict: 'user_id,chapter_id' }
-      );
+      
+      // --- تحديث تسجيل القراءة بعد الشراء ---
+      const { data: existingHistory } = await supabase.from('reading_history')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('chapter_id', chapter.id)
+        .maybeSingle();
+
+      if (existingHistory) {
+        await supabase.from('reading_history')
+          .update({ read_at: new Date().toISOString() })
+          .eq('id', existingHistory.id);
+      } else {
+        await supabase.from('reading_history')
+          .insert({ user_id: user.id, chapter_id: chapter.id, read_at: new Date().toISOString() });
+      }
+      // --------------------------------------
+      
       toast.success(lang === 'ar' ? 'تم فتح الفصل!' : 'Chapter unlocked!');
     } catch (err: any) {
       toast.error(err.message);
@@ -266,7 +191,6 @@ const ChapterReader = () => {
   if (!manhwa || !chapter) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t('noResults')}</div>;
 
   const effectivelyLocked = (() => {
-    if (isAdmin || isModerator) return false;
     if (!chapter.is_locked) return false;
     if (chapter.lock_duration_days > 0 && chapter.published_at) {
       const unlockDate = new Date(new Date(chapter.published_at).getTime() + chapter.lock_duration_days * 86400000);
@@ -299,7 +223,7 @@ const ChapterReader = () => {
                 {lang === 'ar' ? 'مقفول' : 'Locked'}
               </span>
             )}
-            <Button variant="ghost" size="icon" onClick={handleViewModeChange} className="text-muted-foreground hover:text-primary">
+            <Button variant="ghost" size="icon" onClick={() => setViewMode(viewMode === 'vertical' ? 'page' : 'vertical')} className="text-muted-foreground hover:text-primary">
               {viewMode === 'vertical' ? <Columns className="w-4 h-4" /> : <Rows3 className="w-4 h-4" />}
             </Button>
           </div>
@@ -320,7 +244,6 @@ const ChapterReader = () => {
           </div>
         </div>
       )}
-      
       {effectivelyLocked && !isUnlocked ? (
         <div className="max-w-3xl mx-auto px-4">
           <div className="min-h-[60vh] flex items-center justify-center">
@@ -337,6 +260,7 @@ const ChapterReader = () => {
                 )}
               </p>
               {user ? (
+                // تم استبدال الكلاس glow-purple بـ shadow-glow
                 <Button onClick={handleUnlock} className="bg-primary hover:bg-primary/90 shadow-glow gap-2">
                   <Lock className="w-4 h-4" /> {t('unlock')} ({chapter.coin_price} {t('coins')})
                 </Button>
@@ -347,17 +271,12 @@ const ChapterReader = () => {
           </div>
         </div>
       ) : (
-        <div className="max-w-3xl mx-auto" ref={readerRef}>
+        <div className="max-w-3xl mx-auto">
           <AdBanner slotId="top-reader" className="mb-6" />
           {viewMode === 'vertical' ? (
             <div className="reader-vertical flex flex-col gap-0">
-              {pages.map((page, index) => (
-                <LazyImage 
-                   key={page.id} 
-                   src={page.image_url} 
-                   alt={`Page ${page.page_number || index + 1}`} 
-                   onLoad={() => setImagesLoadedCount(c => c + 1)}
-                />
+              {pages.map(page => (
+                <img key={page.id} src={page.image_url} alt={`Page ${page.page_number}`} className="w-full m-0 p-0 block leading-none" loading="lazy" />
               ))}
             </div>
           ) : (
@@ -366,11 +285,11 @@ const ChapterReader = () => {
                 <img src={pages[currentPage].image_url} alt={`Page ${currentPage + 1}`} className="max-h-[85vh] object-contain" />
               )}
               <div className="flex items-center gap-4 mt-4">
-                <Button variant="outline" disabled={currentPage === 0} onClick={() => handlePageChange(currentPage - 1)} size="sm">
+                <Button variant="outline" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)} size="sm">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <span className="text-sm text-muted-foreground">{currentPage + 1} / {pages.length}</span>
-                <Button variant="outline" disabled={currentPage >= pages.length - 1} onClick={() => handlePageChange(currentPage + 1)} size="sm">
+                <Button variant="outline" disabled={currentPage >= pages.length - 1} onClick={() => setCurrentPage(p => p + 1)} size="sm">
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -424,7 +343,7 @@ const ChapterReader = () => {
           {user ? (
             <div className="flex gap-3 mb-4">
               <Textarea value={commentText} onChange={e => setCommentText(e.target.value)} placeholder={t('addComment')} className="bg-card/50 border-border/50 min-h-[70px]" />
-              <Button onClick={submitComment} disabled={!commentText.trim()} className="bg-primary hover:bg-primary/90 shadow-glow shrink-0 self-end"><Send className="w-4 h-4" /></Button>
+              <Button onClick={submitComment} disabled={!commentText.trim()} className="bg-primary hover:bg-primary/90 shrink-0 self-end"><Send className="w-4 h-4" /></Button>
             </div>
           ) : (
             <div className="mb-4 p-4 rounded-xl bg-card/30 border border-border/30 text-center">
