@@ -8,11 +8,27 @@ import { ChevronLeft, ChevronRight, Home, BookOpen, Columns, Rows3, Lock, Messag
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import AdBanner from '@/components/AdBanner';
+// أضفنا هذه المكتبة لتسريع تحميل الصور (تأكد من تثبيتها npm install react-intersection-observer)
+import { useInView } from 'react-intersection-observer';
+
+// مكون فرعي لتحميل كل صورة على حدة فقط عند رؤيتها
+const LazyImage = ({ src, alt }: { src: string; alt: string }) => {
+  const { ref, inView } = useInView({ triggerOnce: true, rootMargin: '400px 0px' });
+  return (
+    <div ref={ref} className="w-full min-h-[300px] flex items-center justify-center bg-secondary/10">
+      {inView ? (
+        <img src={src} alt={alt} className="w-full h-auto object-contain" loading="lazy" />
+      ) : (
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      )}
+    </div>
+  );
+};
 
 const ChapterReader = () => {
   const { slug, chapterNum } = useParams();
   const { t, lang } = useI18n();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth(); // جلبنا isAdmin للتحقق من الصلاحيات
   const navigate = useNavigate();
   const [manhwa, setManhwa] = useState<any>(null);
   const [chapter, setChapter] = useState<any>(null);
@@ -26,6 +42,7 @@ const ChapterReader = () => {
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState('');
   const [userRating, setUserRating] = useState(0);
+  const [isModerator, setIsModerator] = useState(false); // حالة جديدة للمودريتر
 
   const fetchPages = async (chapterId: string) => {
     const { data } = await supabase.from('chapter_pages').select('*').eq('chapter_id', chapterId).order('page_number');
@@ -37,6 +54,13 @@ const ChapterReader = () => {
     if (!slug || !chapterNum) return;
     const fetchChapter = async () => {
       setLoading(true);
+
+      // تحقق مما إذا كان المستخدم مودريتر
+      if (user) {
+        const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
+        if (roleData?.role === 'moderator') setIsModerator(true);
+      }
+
       const { data: m } = await supabase.from('manhwa').select('*').eq('slug', slug).single();
       if (!m) { setLoading(false); return; }
       setManhwa(m);
@@ -46,7 +70,7 @@ const ChapterReader = () => {
       setChapter(ch);
 
       // Increment views securely via RPC
-     const viewedKey = `viewed_chapter_${ch.id}`;
+      const viewedKey = `viewed_chapter_${ch.id}`;
       if (!localStorage.getItem(viewedKey)) {
         (supabase.rpc as any)('increment_chapter_view', { p_chapter_id: ch.id }).then(() => {
           localStorage.setItem(viewedKey, 'true');
@@ -62,11 +86,16 @@ const ChapterReader = () => {
       setNextChapter(nextRes.data?.[0] || null);
       if (commentsRes.data) setComments(commentsRes.data);
 
-      // Check time-based unlock
+      // التعديل الأهم: فحص الصلاحيات (الآدمن والمودريتر يتجاوزون القفل)
       let effectivelyLocked = ch.is_locked;
-      if (ch.is_locked && ch.lock_duration_days > 0 && ch.published_at) {
-        const unlockDate = new Date(new Date(ch.published_at).getTime() + ch.lock_duration_days * 86400000);
-        if (new Date() > unlockDate) effectivelyLocked = false;
+      
+      // إذا كان الإدارة، افتح الفصل فوراً
+      if (isAdmin || isModerator) {
+         effectivelyLocked = false;
+      } else if (ch.is_locked && ch.lock_duration_days > 0 && ch.published_at) {
+         // إذا لم يكن إدارة، افحص وقت النشر
+         const unlockDate = new Date(new Date(ch.published_at).getTime() + ch.lock_duration_days * 86400000);
+         if (new Date() > unlockDate) effectivelyLocked = false;
       }
 
       let allowed = !effectivelyLocked;
@@ -74,6 +103,7 @@ const ChapterReader = () => {
         setIsUnlocked(true);
         await fetchPages(ch.id);
       } else if (user) {
+        // إذا كان الفصل مقفلاً والمستخدم مسجل دخول، ابحث عن سجل الشراء
         const { data: unlock } = await supabase.from('chapter_unlocks').select('id').eq('chapter_id', ch.id).eq('user_id', user.id).maybeSingle();
         allowed = !!unlock;
         setIsUnlocked(allowed);
@@ -83,14 +113,9 @@ const ChapterReader = () => {
           setPages([]);
         }
       } else {
+        // مستخدم غير مسجل والفصل مقفل
         setIsUnlocked(false);
         setPages([]);
-      }
-
-      if (!allowed) {
-        // Just let them view the unlock screen
-        setPages([]);
-        setIsUnlocked(false);
       }
 
       if (user) {
@@ -108,7 +133,7 @@ const ChapterReader = () => {
       setLoading(false);
     };
     fetchChapter();
-  }, [slug, chapterNum, user]);
+  }, [slug, chapterNum, user, isAdmin, isModerator]);
 
   const handleUnlock = async () => {
     if (!user || !chapter) return;
@@ -168,7 +193,9 @@ const ChapterReader = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   if (!manhwa || !chapter) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t('noResults')}</div>;
 
+  // تعريف effectivelyLocked مرة أخرى للواجهة بوجود الصلاحيات
   const effectivelyLocked = (() => {
+    if (isAdmin || isModerator) return false;
     if (!chapter.is_locked) return false;
     if (chapter.lock_duration_days > 0 && chapter.published_at) {
       const unlockDate = new Date(new Date(chapter.published_at).getTime() + chapter.lock_duration_days * 86400000);
@@ -222,6 +249,7 @@ const ChapterReader = () => {
           </div>
         </div>
       )}
+      
       {effectivelyLocked && !isUnlocked ? (
         <div className="max-w-3xl mx-auto px-4">
           <div className="min-h-[60vh] flex items-center justify-center">
@@ -238,7 +266,8 @@ const ChapterReader = () => {
                 )}
               </p>
               {user ? (
-                <Button onClick={handleUnlock} className="bg-primary hover:bg-primary/90 glow-purple gap-2">
+                // تم إزالة glow-purple واستبدالها ب shadow-glow
+                <Button onClick={handleUnlock} className="bg-primary hover:bg-primary/90 shadow-glow gap-2">
                   <Lock className="w-4 h-4" /> {t('unlock')} ({chapter.coin_price} {t('coins')})
                 </Button>
               ) : (
@@ -251,9 +280,10 @@ const ChapterReader = () => {
         <div className="max-w-3xl mx-auto">
           <AdBanner slotId="top-reader" className="mb-6" />
           {viewMode === 'vertical' ? (
-            <div className="reader-vertical">
-              {pages.map(page => (
-                <img key={page.id} src={page.image_url} alt={`Page ${page.page_number}`} className="w-full" loading="lazy" />
+            <div className="reader-vertical flex flex-col gap-0">
+              {/* استخدام مكون LazyImage بدل img العادي لتحميل تدريجي وسريع */}
+              {pages.map((page, index) => (
+                <LazyImage key={page.id} src={page.image_url} alt={`Page ${page.page_number || index + 1}`} />
               ))}
             </div>
           ) : (
