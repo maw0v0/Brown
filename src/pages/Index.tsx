@@ -5,8 +5,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, ChevronRight, Star, Clock, TrendingUp, Sparkles, Flame, BookOpen, Lock, ArrowUpRight, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Clock, TrendingUp, Sparkles, Flame, BookOpen, Lock, ArrowUpRight, Share2, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 const DiscordIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -14,7 +15,6 @@ const DiscordIcon = () => (
   </svg>
 );
 
-// Group chapters by manhwa and sort them by chapter number
 const groupChaptersByManhwa = (chapters: any[]) => {
   const grouped: Record<string, { manhwa: any; chapters: any[] }> = {};
   
@@ -64,7 +64,7 @@ const Index = () => {
           .select('*, chapters(chapter_number, title, manhwa_id, manhwa:manhwa_id(title, title_ar, slug, cover_url))')
           .eq('user_id', user.id)
           .order('read_at', { ascending: false })
-          .limit(6);
+          .limit(4); // جلب 4 فقط لتناسب التصميم الجديد (مثل الصورة)
         if (histData) setReadingHistory(histData);
       }
       
@@ -105,9 +105,16 @@ const Index = () => {
     setReportText('');
   };
 
+  // دالة لتنسيق رقم المشاهدات (مثل 1.2K أو 1M)
+  const formatViews = (views: number) => {
+    if (views >= 1000000) return (views / 1000000).toFixed(1) + 'M';
+    if (views >= 1000) return (views / 1000).toFixed(1) + 'K';
+    return views;
+  };
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="relative h-[350px] md:h-[450px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
         <div className="absolute top-20 start-1/4 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
@@ -135,7 +142,7 @@ const Index = () => {
                   </p>
                   <div className="flex gap-3">
                     <Link to={`/manhwa/${featured.slug}`}>
-                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 glow-purple gap-2">
+                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 shadow-glow gap-2">
                         <BookOpen className="w-4 h-4" />
                         {lang === 'ar' ? 'ابدأ القراءة' : 'Start Reading'}
                       </Button>
@@ -150,7 +157,7 @@ const Index = () => {
               ) : (
                 <>
                   <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-3 font-orbitron">
-                    Brown<span className="text-primary glow-text">Manga</span>
+                    Manga<span className="text-primary">Brown</span>
                   </h1>
                   <p className="text-muted-foreground text-lg mb-5">
                     {lang === 'ar' ? 'أفضل موقع عربي للمانجا والمانهوا!' : 'The best Arabic manga & manhwa site!'}
@@ -167,12 +174,12 @@ const Index = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="flex items-center justify-between p-4 rounded-xl bg-card/50 border border-border/30">
             <div>
-              <p className="font-bold text-foreground text-sm">{lang === 'ar' ? 'شارك Brown Manga' : 'Share Brown Manga'}</p>
+              <p className="font-bold text-foreground text-sm">{lang === 'ar' ? 'شارك Manga Brown' : 'Share Manga Brown'}</p>
               <p className="text-xs text-muted-foreground">{lang === 'ar' ? 'مع أصدقائك' : 'to your friends'}</p>
             </div>
             <Button size="sm" variant="outline" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10" onClick={() => {
               if (navigator.share) {
-                navigator.share({ title: 'Brown Manga', url: window.location.href });
+                navigator.share({ title: 'Manga Brown', url: window.location.href });
               } else {
                 navigator.clipboard.writeText(window.location.href);
                 toast.success(lang === 'ar' ? 'تم نسخ الرابط' : 'Link copied');
@@ -187,7 +194,7 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">{lang === 'ar' ? 'تواصل معنا' : 'Stay connected with us'}</p>
             </div>
             <a href={discordUrl || 'https://discord.com'} target="_blank" rel="noreferrer">
-              <Button size="sm" className="gap-1.5 bg-[#5865F2] hover:bg-[#4752C4]">
+              <Button size="sm" className="gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white">
                 <DiscordIcon /> Discord
               </Button>
             </a>
@@ -201,25 +208,39 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Continue Reading */}
+        {/* أكمل القراءة (Continue Reading) - تصميم فخم مطابق للصورة */}
         {user && readingHistory.length > 0 && (
           <section>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-cairo mb-4">
-              <Clock className="w-4 h-4 text-primary" />
-              {lang === 'ar' ? 'أكمل القراءة' : 'Continue Reading'}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2 font-cairo">
+                <Clock className="w-5 h-5 text-primary" />
+                {lang === 'ar' ? 'أكمل القراءة' : 'Continue Reading'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {readingHistory.map((h: any) => {
                 const m = h.chapters?.manhwa;
                 if (!m) return null;
                 return (
                   <Link key={h.id} to={`/manhwa/${m.slug}/chapter/${h.chapters.chapter_number}`} className="group block">
-                    <div className="relative overflow-hidden rounded-xl aspect-[5/7] bg-secondary">
-                      <img src={m.cover_url || ''} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
-                      <div className="absolute bottom-0 start-0 end-0 p-2.5">
-                        <h3 className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{lang === 'ar' ? (m.title_ar || m.title) : m.title}</h3>
-                        <p className="text-[10px] text-primary mt-0.5">Ch.{h.chapters.chapter_number}</p>
+                    <div className="relative overflow-hidden rounded-2xl aspect-[3/4] bg-secondary border border-border/50 shadow-md">
+                      <img 
+                        src={m.cover_url || ''} 
+                        alt="" 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        loading="lazy" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+                      
+                      <div className="absolute bottom-0 start-0 end-0 p-4">
+                        <h3 className="text-sm font-bold text-white line-clamp-1 group-hover:text-primary transition-colors font-cairo">
+                          {lang === 'ar' ? (m.title_ar || m.title) : m.title}
+                        </h3>
+                        <div className="flex items-center justify-between mt-2">
+                           <span className="text-xs font-medium text-primary">
+                             {lang === 'ar' ? 'الفصل' : 'Ch.'} {h.chapters.chapter_number}
+                           </span>
+                        </div>
                       </div>
                     </div>
                   </Link>
@@ -252,21 +273,18 @@ const Index = () => {
             </div>
 
             <TabsContent value="hot" className="mt-0">
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {groupedLatest.map(({ manhwa: m, chapters: chs }) => (
                   <div key={m.id} className="flex gap-4 p-4 rounded-xl bg-card/50 border border-border/20 hover:border-primary/20 transition-all">
-                    {/* Cover */}
                     <Link to={`/manhwa/${m.slug}`} className="shrink-0">
-                      <img src={m.cover_url || `https://placehold.co/120x170/1a1a2e/7c3aed?text=${encodeURIComponent(m.title)}`} alt="" className="w-24 h-32 sm:w-28 sm:h-36 object-cover rounded-lg" loading="lazy" />
+                      <img src={m.cover_url || `https://placehold.co/120x170/1a1a2e/d9ac93?text=${encodeURIComponent(m.title)}`} alt="" className="w-24 h-32 sm:w-28 sm:h-36 object-cover rounded-lg" loading="lazy" />
                     </Link>
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-bold uppercase">Manhwa</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="flex items-center gap-0.5 text-amber-400"><Star className="w-3 h-3 fill-amber-400" /> 0</span>
                           <span className={`flex items-center gap-1 ${m.status === 'completed' ? 'text-emerald-400' : 'text-sky-400'}`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
                             {m.status === 'completed' ? (lang === 'ar' ? 'مكتمل' : 'Completed') : m.status === 'ongoing' ? (lang === 'ar' ? 'مستمر' : 'Ongoing') : (lang === 'ar' ? 'متوقف' : 'Hiatus')}
@@ -278,7 +296,6 @@ const Index = () => {
                           {lang === 'ar' ? (m.title_ar || m.title) : m.title}
                         </h3>
                       </Link>
-                      {/* Chapter list */}
                       <div className="space-y-1">
                         {chs.map((ch: any, idx: number) => (
                           <Link
@@ -298,17 +315,17 @@ const Index = () => {
                   </div>
                 ))}
                 {groupedLatest.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">{t('noResults')}</div>
+                  <div className="col-span-1 md:col-span-2 text-center py-12 text-muted-foreground">{t('noResults')}</div>
                 )}
               </div>
             </TabsContent>
 
             <TabsContent value="new" className="mt-0">
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {groupedLatest.map(({ manhwa: m, chapters: chs }) => (
                   <div key={m.id} className="flex gap-4 p-4 rounded-xl bg-card/50 border border-border/20 hover:border-primary/20 transition-all">
                     <Link to={`/manhwa/${m.slug}`} className="shrink-0">
-                      <img src={m.cover_url || `https://placehold.co/120x170/1a1a2e/7c3aed`} alt="" className="w-24 h-32 sm:w-28 sm:h-36 object-cover rounded-lg" loading="lazy" />
+                      <img src={m.cover_url || `https://placehold.co/120x170/1a1a2e/d9ac93`} alt="" className="w-24 h-32 sm:w-28 sm:h-36 object-cover rounded-lg" loading="lazy" />
                     </Link>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -338,11 +355,11 @@ const Index = () => {
           </Tabs>
         </section>
 
-        {/* Popular Today */}
+        {/* Popular Today - تم إضافة أيقونة ورقم المشاهدات هنا */}
         <section>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-cairo">
-              <Flame className="w-4 h-4 text-primary" />
+              <TrendingUp className="w-5 h-5 text-primary" />
               {lang === 'ar' ? 'الأكثر شعبية اليوم' : 'Popular Today'}
             </h2>
             <Link to="/browse">
@@ -353,28 +370,36 @@ const Index = () => {
             </Link>
           </div>
           {loading ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
               {Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-[5/7] rounded-xl bg-secondary animate-pulse" />)}
             </div>
           ) : manhwaList.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {manhwaList.slice(0, 12).map(m => (
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+              {manhwaList.slice(0, 12).map((m, index) => (
                 <Link key={m.id} to={`/manhwa/${m.slug}`} className="group relative block">
-                  <div className="relative overflow-hidden rounded-xl aspect-[5/7] bg-secondary">
+                  <div className="relative overflow-hidden rounded-xl aspect-[5/7] bg-secondary border border-border/30">
                     <img
-                      src={m.cover_url || `https://placehold.co/400x560/1a1a2e/7c3aed?text=${encodeURIComponent(m.title)}`}
+                      src={m.cover_url || `https://placehold.co/400x560/1a1a2e/d9ac93?text=${encodeURIComponent(m.title)}`}
                       alt={lang === 'ar' ? (m.title_ar || m.title) : m.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-90" />
-                    <div className="absolute top-2 start-2">
-                      <span className="px-2 py-0.5 rounded-md bg-primary/20 text-primary text-[9px] font-bold uppercase">Manhwa</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-90" />
+                    
+                    {/* الترتيب (1, 2, 3...) */}
+                    <div className="absolute top-2 start-2 w-7 h-7 rounded-lg bg-primary/90 text-primary-foreground flex items-center justify-center font-bold text-xs shadow-md">
+                      #{index + 1}
                     </div>
-                    <div className="absolute bottom-0 start-0 end-0 p-2.5">
-                      <h3 className="font-bold text-xs text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+
+                    <div className="absolute bottom-0 start-0 end-0 p-3">
+                      <h3 className="font-bold text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors font-cairo mb-1.5">
                         {lang === 'ar' ? (m.title_ar || m.title) : m.title}
                       </h3>
+                      {/* إضافة المشاهدات مع الأيقونة */}
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{formatViews(m.views || 0)}</span>
+                      </div>
                     </div>
                   </div>
                 </Link>
@@ -410,7 +435,7 @@ const Index = () => {
               />
               <div className="flex gap-3 justify-end mt-4">
                 <Button variant="ghost" onClick={() => setReportOpen(false)}>{lang === 'ar' ? 'إلغاء' : 'Cancel'}</Button>
-                <Button onClick={submitReport} className="bg-primary hover:bg-primary/90">{lang === 'ar' ? 'إرسال' : 'Submit'}</Button>
+                <Button onClick={submitReport} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow">{lang === 'ar' ? 'إرسال' : 'Submit'}</Button>
               </div>
             </div>
           </div>
