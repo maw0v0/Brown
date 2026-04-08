@@ -199,6 +199,7 @@ const ManhwaDetail = () => {
   const [chapters, setChapters] = useState<any[]>([]);
   const [genres, setGenres] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
+  const [readingHistory, setReadingHistory] = useState<any[]>([]); // حالة جديدة لسجل القراءة
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [userRating, setUserRating] = useState(0);
@@ -256,14 +257,22 @@ const ManhwaDetail = () => {
       await fetchComments(m.id);
 
       if (user) {
-        const [favRes, subRes, urRes] = await Promise.all([
+        const [favRes, subRes, urRes, histRes] = await Promise.all([
           supabase.from('favorites').select('id').eq('manhwa_id', m.id).eq('user_id', user.id).maybeSingle(),
           supabase.from('manhwa_subscriptions').select('id').eq('manhwa_id', m.id).eq('user_id', user.id).maybeSingle(),
           supabase.from('ratings').select('score').eq('manhwa_id', m.id).eq('user_id', user.id).maybeSingle(),
+          // جلب الفصول المقروءة من هذا العمل تحديداً
+          supabase.from('reading_history')
+            .select('*, chapters!inner(chapter_number, title, manhwa_id)')
+            .eq('user_id', user.id)
+            .eq('chapters.manhwa_id', m.id)
+            .order('read_at', { ascending: false })
+            .limit(4)
         ]);
         setIsFavorite(!!favRes.data);
         setIsSubscribed(!!subRes.data);
         if (urRes.data) setUserRating(urRes.data.score);
+        if (histRes.data) setReadingHistory(histRes.data);
       }
       setLoading(false);
     };
@@ -395,7 +404,7 @@ const ManhwaDetail = () => {
             <div className="flex items-center gap-3 mb-6">
               {chapters[chapters.length - 1] && (
                 <Link to={`/manhwa/${manhwa.slug}/chapter/${chapters[chapters.length - 1].chapter_number}`}>
-                  <Button className="bg-primary hover:bg-primary/90 glow-purple gap-2">
+                  <Button className="bg-primary hover:bg-primary/90 shadow-glow gap-2">
                     <BookOpen className="w-4 h-4" />
                     {lang === 'ar' ? 'ابدأ القراءة' : 'Start Reading'}
                   </Button>
@@ -420,6 +429,45 @@ const ManhwaDetail = () => {
             </p>
           </div>
         </div>
+
+        {/* --- قسم أكمل القراءة (جديد) --- */}
+        {user && readingHistory.length > 0 && (
+          <section className="mt-12">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2 font-cairo">
+                <Clock className="w-5 h-5 text-primary" />
+                {lang === 'ar' ? 'أكمل القراءة' : 'Continue Reading'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {readingHistory.map((h: any) => (
+                <Link key={h.id} to={`/manhwa/${manhwa.slug}/chapter/${h.chapters.chapter_number}`} className="group block">
+                  <div className="relative overflow-hidden rounded-2xl aspect-[3/4] bg-secondary border border-border/50 shadow-md">
+                    <img 
+                      src={manhwa.cover_url || ''} 
+                      alt="" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      loading="lazy" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+                    
+                    <div className="absolute bottom-0 start-0 end-0 p-4">
+                      <h3 className="text-sm font-bold text-white line-clamp-1 group-hover:text-primary transition-colors font-cairo">
+                        {lang === 'ar' ? (manhwa.title_ar || manhwa.title) : manhwa.title}
+                      </h3>
+                      <div className="flex items-center justify-between mt-2">
+                         <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-md">
+                           {lang === 'ar' ? 'الفصل' : 'Ch.'} {h.chapters.chapter_number}
+                         </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+        {/* --- نهاية قسم أكمل القراءة --- */}
 
         {lockedNotice && (
           <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-center justify-between gap-3">
