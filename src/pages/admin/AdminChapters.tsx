@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Edit2, Image, Upload, Eye, FileArchive, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Image, Upload, Eye, FileArchive, Loader2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import JSZip from 'jszip'; 
@@ -105,6 +105,8 @@ const AdminChapters = () => {
       title: form.title || null,
       title_ar: form.title_ar || null,
       is_locked: form.is_locked,
+      coin_price: form.is_locked ? Number(form.coin_price) : 0,
+      lock_duration_days: form.is_locked ? Number(form.lock_duration_days) : 0,
     };
 
     const { data: chapter, error: chErr } = editing 
@@ -144,37 +146,23 @@ const AdminChapters = () => {
     toast.success(editing ? "تم تعديل الفصل بنجاح!" : "تم رفع الفصل وترتيبه بنجاح!");
   };
 
-  // دالة الحذف الشامل (الصور + قاعدة البيانات)
   const handleDelete = async () => {
     if (!chapterToDelete) return;
     setIsDeleting(true);
 
     try {
-      // 1. جلب مسارات كل الصور التابعة لهذا الفصل
-      const { data: pagesData } = await supabase
-        .from('chapter_pages')
-        .select('image_url')
-        .eq('chapter_id', chapterToDelete.id);
+      const { data: pagesData } = await supabase.from('chapter_pages').select('image_url').eq('chapter_id', chapterToDelete.id);
 
       if (pagesData && pagesData.length > 0) {
-        // استخراج اسم الملف من الرابط ومسحه من Storage
         const filePaths = pagesData.map(p => {
           const parts = p.image_url.split('/');
           const fileName = parts[parts.length - 1];
           return `chapters/${chapterToDelete.id}/${fileName}`;
         });
-
-        const { error: storageError } = await supabase.storage
-          .from('avatars')
-          .remove(filePaths);
-
-        if (storageError) {
-          console.error("خطأ في حذف الصور من التخزين:", storageError);
-          // لا نوقف العملية، نستمر بحذف الفصل من قاعدة البيانات
-        }
+        const { error: storageError } = await supabase.storage.from('avatars').remove(filePaths);
+        if (storageError) console.error("خطأ في حذف الصور من التخزين:", storageError);
       }
 
-      // 2. حذف الفصل من قاعدة البيانات (سيتم حذف الصفحات التابعة له تلقائياً إذا كان هناك CASCADE، وإلا نحذفها يدوياً)
       await supabase.from('chapter_pages').delete().eq('chapter_id', chapterToDelete.id);
       const { error: dbError } = await supabase.from('chapters').delete().eq('id', chapterToDelete.id);
 
@@ -208,18 +196,30 @@ const AdminChapters = () => {
       <div className="grid gap-3">
         {chapters.map(ch => (
           <div key={ch.id} className="flex items-center justify-between p-4 bg-card rounded-xl border border-border/50 hover:border-primary/50 transition-colors">
-            <span className="font-bold text-lg">الفصل {ch.chapter_number}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-lg">الفصل {ch.chapter_number}</span>
+              {ch.is_locked && <Lock className="w-4 h-4 text-primary" />}
+            </div>
             <div className="flex gap-2">
               <Button variant="ghost" size="icon" onClick={() => { setSelectedChapter(ch); setPagesDialog(true); }}><Image className="w-4 h-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => { setEditing(ch); setForm({...ch}); setDialogOpen(true); }}><Edit2 className="w-4 h-4" /></Button>
-              {/* زر الحذف مفعل الآن */}
+              <Button variant="ghost" size="icon" onClick={() => { 
+                setEditing(ch); 
+                setForm({
+                  chapter_number: ch.chapter_number.toString(), 
+                  title: ch.title || '', 
+                  title_ar: ch.title_ar || '', 
+                  is_locked: ch.is_locked || false, 
+                  coin_price: ch.coin_price?.toString() || '0', 
+                  lock_duration_days: ch.lock_duration_days?.toString() || '0'
+                }); 
+                setDialogOpen(true); 
+              }}><Edit2 className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => confirmDelete(ch)}><Trash2 className="w-4 h-4" /></Button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* نافذة التأكيد على الحذف */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px] bg-card">
           <DialogHeader>
@@ -238,15 +238,37 @@ const AdminChapters = () => {
         </DialogContent>
       </Dialog>
 
-      {/* نافذة الرفع */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-xl bg-card border-border/50">
           <DialogHeader><DialogTitle>{editing ? 'تعديل الفصل' : 'نشر فصل (دعم ZIP + ترتيب تلقائي)'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>رقم الفصل</Label><Input type="number" value={form.chapter_number} onChange={e => setForm({...form, chapter_number: e.target.value})} className="bg-secondary/50" /></div>
-              <div><Label>العنوان (اختياري)</Label><Input value={form.title_ar} onChange={e => setForm({...form, title_ar: e.target.value})} className="bg-secondary/50" /></div>
+              <div><Label>رقم الفصل</Label><Input type="number" value={form.chapter_number} onChange={e => setForm({...form, chapter_number: e.target.value})} className="bg-secondary/50 mt-1" /></div>
+              <div><Label>العنوان (اختياري)</Label><Input value={form.title_ar} onChange={e => setForm({...form, title_ar: e.target.value})} className="bg-secondary/50 mt-1" /></div>
             </div>
+
+            {/* قسم القفل والإعدادات المدفوعة */}
+            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border border-border/50">
+              <div className="space-y-0.5">
+                <Label className="text-base flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> قفل الفصل (مدفوع)</Label>
+                <p className="text-xs text-muted-foreground">تحديد سعر للفصل ومدة زمنية للقفل</p>
+              </div>
+              <Switch checked={form.is_locked} onCheckedChange={(checked) => setForm({...form, is_locked: checked})} />
+            </div>
+
+            {form.is_locked && (
+              <div className="grid grid-cols-2 gap-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                <div>
+                  <Label>سعر الفصل (عملات)</Label>
+                  <Input type="number" min="0" value={form.coin_price} onChange={e => setForm({...form, coin_price: e.target.value})} className="bg-background mt-1" />
+                </div>
+                <div>
+                  <Label>مدة القفل (بالأيام)</Label>
+                  <Input type="number" min="0" value={form.lock_duration_days} onChange={e => setForm({...form, lock_duration_days: e.target.value})} className="bg-background mt-1" />
+                  <p className="text-[10px] text-muted-foreground mt-1">اكتب 0 لقفل دائم</p>
+                </div>
+              </div>
+            )}
 
             <div className="border-2 border-dashed border-border/50 p-8 rounded-2xl text-center hover:border-primary/50 hover:bg-primary/5 transition-all bg-secondary/20">
               <input type="file" multiple accept="image/*,.zip" className="hidden" id="file-upload" 
