@@ -133,13 +133,23 @@ const ChapterReader = () => {
         if (ur) setUserRating(ur.score);
       }
 
+      // حفظ سجل القراءة بطريقة آمنة 100%
       if (user && allowed) {
-        await supabase.from('reading_history').upsert(
-          { user_id: user.id, chapter_id: ch.id, read_at: new Date().toISOString() },
-          { onConflict: 'user_id,chapter_id' }
-        );
-      }
+        const { data: existingHistory } = await supabase.from('reading_history')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('chapter_id', ch.id)
+          .maybeSingle();
 
+        if (existingHistory) {
+          await supabase.from('reading_history')
+            .update({ read_at: new Date().toISOString() })
+            .eq('id', existingHistory.id);
+        } else {
+          await supabase.from('reading_history')
+            .insert({ user_id: user.id, chapter_id: ch.id, read_at: new Date().toISOString() });
+        }
+      }
       setLoading(false);
     };
     fetchChapter();
